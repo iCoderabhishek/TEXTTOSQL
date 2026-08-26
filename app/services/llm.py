@@ -1,10 +1,13 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_aws import ChatBedrockConverse
 from langchain.tools import tool
 from app.core.config import settings
 
-llm = ChatGoogleGenerativeAI(
-    model=settings.GEMINI_MODEL,
-    google_api_key=settings.GOOGLE_API_KEY,
+llm = ChatBedrockConverse(
+    model=settings.BEDROCK_MODEL_ID,
+    region_name=settings.AWS_REGION_NAME,
+    temperature=0,
+    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
 )
 
 
@@ -16,11 +19,11 @@ def get_weather(city: str) -> str:
 
 llm_with_tools = llm.bind_tools(
     tools=[get_weather],
-    tool_config={
-        "function_calling_config": {
-            "mode": "AUTO",  # Modes: ANY (force tool), AUTO (let LLM decide), NONE (disable)
-        }
-    }
+    # tool_config={
+    #     "function_calling_config": {
+    #         "mode": "AUTO",  # Modes: ANY (force tool), AUTO (let LLM decide), NONE (disable)
+    #     }
+    # }
 )
     
 

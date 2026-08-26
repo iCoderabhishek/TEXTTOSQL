@@ -2,6 +2,7 @@ from pydantic import Field
 from pydantic import BaseModel
 from uuid import UUID
 from typing_extensions import TypedDict,Annotated
+from typing import Optional
 
 
 
@@ -11,6 +12,12 @@ class ChatRequest(TypedDict):
     message: Annotated[str, Field(..., description="User's message")]
 
     
+
+class SQLQueryGeneratorRequest(BaseModel):
+    user_id: UUID = Field(..., description="UUID of the user")
+    question: str = Field(..., description="The natural language question")
+    db_schema: Optional[str] = Field(None, description="The database schema, if known")
+    table_name: Optional[str] = Field(None, description="The table name, if known")
 
 class ChatResponse(BaseModel):
     response: Annotated[str, Field(..., description="Agent's response")]
