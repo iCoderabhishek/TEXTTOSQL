@@ -8,9 +8,11 @@ router = APIRouter()
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
     try:
-        result = ask_agent(user_id=request.user_id, question=request.question)
-        print(result)
-        return ChatResponse(response=result.content if result.content else "Error", sql_query=result.sql_query if result.sql_query else None)
+        answer_string = ask_agent(user_id=request.user_id, question=request.message)
+        
+        return ChatResponse(
+            response=answer_string, 
+            sql_query=None
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-        detail = str(e)

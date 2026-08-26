@@ -7,11 +7,9 @@ from typing import Optional
 
 
 
-class ChatRequest(TypedDict):
-    user_id: Annotated[UUID, Field(..., description="UUID of the user")]
-    message: Annotated[str, Field(..., description="User's message")]
-
-    
+class ChatRequest(BaseModel):
+    user_id: UUID = Field(..., description="UUID of the user")
+    message: str = Field(..., description="User's message")
 
 class SQLQueryGeneratorRequest(BaseModel):
     user_id: UUID = Field(..., description="UUID of the user")
