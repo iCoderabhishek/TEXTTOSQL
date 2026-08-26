@@ -2,9 +2,9 @@ from app.schemas.chat import ChatRequest
 from langchain.agents import create_agent
 from app.services.llm import llm
 from langchain.tools import tool
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from app.schemas.chat import ChatResponse, SQLQueryGeneratorRequest
-from app.core.db import get_db
+from app.core.db import get_db, engine
 from app.models.user import User
 from uuid import UUID
 from app.models.sales import Sales
@@ -100,10 +100,18 @@ db = next(get_db())
 test_user = db.query(User).first()
 real_user_id = test_user.id if test_user else "123e4567-e89b-12d3-a456-426614174000"
 
+# --- DYNAMIC SCHEMA PRE-FETCH ---
+inspector = inspect(engine)
+schema_text = ""
+for table_name in inspector.get_table_names():
+    columns = inspector.get_columns(table_name)
+    col_names = [col['name'] for col in columns]
+    schema_text += f"Table '{table_name}' has columns: {', '.join(col_names)}.\n"
+
 try:
     result = agent.invoke({
         "messages": [
-            {"role": "system", "content": f"The user_id is {real_user_id}. The database has a table named 'Sales' with columns: 'id', 'product', 'quantity', 'price', 'total_sales', 'total_revenue'."},
+            {"role": "system", "content": f"The user_id is {real_user_id}. Here is the exact database schema:\n{schema_text}\n\nIMPORTANT: You are querying PostgreSQL. If a table name has capital letters, you MUST wrap the table name in double quotes in your SQL query (e.g. FROM \"Sales\")."},
             {"role": "user", "content": "What is the total sales done?"}
         ]
     })
