@@ -8,7 +8,7 @@ from app.core.db import get_db, engine
 from app.models.user import User
 from uuid import UUID
 from app.models.sales import Sales
-from langchain.agents.middleware import ToolErrorMiddleware, ToolRetryMiddleware
+from langchain.agents.middleware import ToolErrorMiddleware, ToolRetryMiddleware, ModelFallbackMiddleware
 from app.services.error import on_error
 
 
@@ -104,7 +104,10 @@ agent = create_agent(
             backoff_factor=2.0,
             initial_delay=1.0,
         ), 
-        
+        ModelFallbackMiddleware(
+            "amazon.nova-lite-v1:0",
+            "meta.llama3-1-8b-instruct-v1:0",
+        ),
     ]
 )
 
