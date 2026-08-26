@@ -8,7 +8,7 @@ from app.core.db import get_db, engine
 from app.models.user import User
 from uuid import UUID
 from app.models.sales import Sales
-from langchain.agents.middleware import ToolErrorMiddleware
+from langchain.agents.middleware import ToolErrorMiddleware, ToolRetryMiddleware
 from app.services.error import on_error
 
 
@@ -97,7 +97,15 @@ tools = [generate_sql_query, execute_sql_query]
 agent = create_agent(
     model=llm, 
     tools=tools,
-    middleware=[ToolErrorMiddleware(on_error), ]
+    middleware=[
+        ToolErrorMiddleware(on_error),  
+        ToolRetryMiddleware(
+            max_retries=3,
+            backoff_factor=2.0,
+            initial_delay=1.0,
+        ), 
+        
+    ]
 )
 
 db = next(get_db())
