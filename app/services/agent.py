@@ -8,7 +8,8 @@ from app.core.db import get_db, engine
 from app.models.user import User
 from uuid import UUID
 from app.models.sales import Sales
-from langchain.agents.middleware import ToolErrorMiddleware, ToolRetryMiddleware, ModelFallbackMiddleware
+from langchain.agents.middleware import ToolErrorMiddleware, ToolRetryMiddleware, ModelFallbackMiddleware, HumanInTheLoopMiddleware
+from langgraph.checkpoint.memory import InMemorySaver
 from app.services.error import on_error
 
 
@@ -108,6 +109,15 @@ agent = create_agent(
             "amazon.nova-lite-v1:0",
             "meta.llama3-1-8b-instruct-v1:0",
         ),
+        HumanInTheLoopMiddleware(
+            interrupt_on={
+                "execute_sql_query":{
+                    "allowed_decisions": [
+                        "approve", "edit", "reject"
+                    ]
+                }
+            }
+        )
     ]
 )
 
