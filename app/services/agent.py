@@ -100,29 +100,26 @@ db = next(get_db())
 test_user = db.query(User).first()
 real_user_id = test_user.id if test_user else "123e4567-e89b-12d3-a456-426614174000"
 
-# --- DYNAMIC SCHEMA PRE-FETCH ---
-inspector = inspect(engine)
-schema_text = ""
-for table_name in inspector.get_table_names():
-    columns = inspector.get_columns(table_name)
-    col_names = [col['name'] for col in columns]
-    schema_text += f"Table '{table_name}' has columns: {', '.join(col_names)}.\n"
 
-try:
-    result = agent.invoke({
-        "messages": [
-            {"role": "system", "content": f"The user_id is {real_user_id}. Here is the exact database schema:\n{schema_text}\n\nIMPORTANT: You are querying PostgreSQL. If a table name has capital letters, you MUST wrap the table name in double quotes in your SQL query (e.g. FROM \"Sales\")."},
-            {"role": "user", "content": "What is the total sales done?"}
-        ]
-    })
-    print("\n--- AGENT RESPONSE ---")
-    print(result["messages"][-1].content)
-except Exception as e:
-    if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-        print("\n❌ ERROR: Google Gemini API Rate Limit Exceeded (429).")
-        print("You are on the free tier, making too many requests too fast.")
-        print("Please wait ~60 seconds and run the script again!")
-    else:
-        print(f"\n❌ UNEXPECTED ERROR: {e}")
 
-### end test 
+
+def ask_agent(user_id: UUID, question: str) -> str:
+    # 1. Fetch Dynamic Schema
+    inspector = inspect(engine)
+    schema_text = ""
+    for table_name in inspector.get_table_names():
+        columns = inspector.get_columns(table_name)
+        col_names = [col['name'] for col in columns]
+        schema_text += f"Table '{table_name}' has columns: {', '.join(col_names)}.\n"
+
+    # 2. Invoke the Agent
+    try:
+        result = agent.invoke({
+            "messages": [
+                {"role": "system", "content": f"The user_id is {user_id}. Here is the exact database schema:\n{schema_text}\n\nIMPORTANT: You are querying PostgreSQL. If a table name has capital letters, you MUST wrap the table name in double quotes in your SQL query (e.g. FROM \"Sales\")."},
+                {"role": "user", "content": question}
+            ]
+        })
+        return result["messages"][-1].content
+    except Exception as e:
+        return f"Agent failed: {str(e)}"
