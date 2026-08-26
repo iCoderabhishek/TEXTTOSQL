@@ -7,11 +7,9 @@ from typing import Optional
 
 
 
-class ChatRequest(TypedDict):
-    user_id: Annotated[UUID, Field(..., description="UUID of the user")]
-    message: Annotated[str, Field(..., description="User's message")]
-
-    
+class ChatRequest(BaseModel):
+    user_id: UUID = Field(..., description="UUID of the user")
+    message: str = Field(..., description="User's message")
 
 class SQLQueryGeneratorRequest(BaseModel):
     user_id: UUID = Field(..., description="UUID of the user")
@@ -25,3 +23,9 @@ class ChatResponse(BaseModel):
 
 class TablesResponse(TypedDict):
     tables: Annotated[list[str], Field(..., description="List of table names")]
+
+
+class ChatResumeRequest(BaseModel):
+    user_id: UUID = Field(..., description="UUID of the user")
+    decision: str = Field(..., description="The user's decision: approve or edit or reject")
+

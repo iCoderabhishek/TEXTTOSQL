@@ -8,7 +8,10 @@ from app.core.db import get_db, engine
 from app.models.user import User
 from uuid import UUID
 from app.models.sales import Sales
-
+from langchain.agents.middleware import ToolErrorMiddleware, ToolRetryMiddleware, ModelFallbackMiddleware, HumanInTheLoopMiddleware
+from langgraph.checkpoint.memory import InMemorySaver
+from app.services.error import on_error
+from langgraph.types import Command
 
 
 
@@ -91,38 +94,69 @@ def execute_sql_query(user_id: UUID, sql_query: str) -> ChatResponse:
 
 tools = [generate_sql_query, execute_sql_query]
 
+
 agent = create_agent(
     model=llm, 
-    tools=tools
+    tools=tools,
+    middleware=[
+        ToolErrorMiddleware(on_error),  
+        ToolRetryMiddleware(
+            max_retries=3,
+            backoff_factor=2.0,
+            initial_delay=1.0,
+        ), 
+        ModelFallbackMiddleware(
+            "amazon.nova-lite-v1:0",
+            "meta.llama3-1-8b-instruct-v1:0",
+        ),
+        HumanInTheLoopMiddleware(
+            interrupt_on={
+                "execute_sql_query":{
+                    "allowed_decisions": [
+                        "approve", "edit", "reject"
+                    ]
+                }
+            }
+        )
+    ]
 )
 
 db = next(get_db())
 test_user = db.query(User).first()
 real_user_id = test_user.id if test_user else "123e4567-e89b-12d3-a456-426614174000"
 
-# --- DYNAMIC SCHEMA PRE-FETCH ---
-inspector = inspect(engine)
-schema_text = ""
-for table_name in inspector.get_table_names():
-    columns = inspector.get_columns(table_name)
-    col_names = [col['name'] for col in columns]
-    schema_text += f"Table '{table_name}' has columns: {', '.join(col_names)}.\n"
 
-try:
-    result = agent.invoke({
-        "messages": [
-            {"role": "system", "content": f"The user_id is {real_user_id}. Here is the exact database schema:\n{schema_text}\n\nIMPORTANT: You are querying PostgreSQL. If a table name has capital letters, you MUST wrap the table name in double quotes in your SQL query (e.g. FROM \"Sales\")."},
-            {"role": "user", "content": "What is the total sales done?"}
-        ]
-    })
-    print("\n--- AGENT RESPONSE ---")
-    print(result["messages"][-1].content)
-except Exception as e:
-    if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-        print("\n❌ ERROR: Google Gemini API Rate Limit Exceeded (429).")
-        print("You are on the free tier, making too many requests too fast.")
-        print("Please wait ~60 seconds and run the script again!")
-    else:
-        print(f"\n❌ UNEXPECTED ERROR: {e}")
 
-### end test 
+
+def ask_agent(user_id: UUID, question: str) -> str:
+    # 1. Fetch Dynamic Schema
+    inspector = inspect(engine)
+    schema_text = ""
+    for table_name in inspector.get_table_names():
+        columns = inspector.get_columns(table_name)
+        col_names = [col['name'] for col in columns]
+        schema_text += f"Table '{table_name}' has columns: {', '.join(col_names)}.\n"
+
+    # 2. Invoke the Agent
+    try:
+        result = agent.invoke({
+            "messages": [
+                {"role": "system", "content": f"The user_id is {user_id}. Here is the exact database schema:\n{schema_text}\n\nIMPORTANT: You are querying PostgreSQL. If a table name has capital letters, you MUST wrap the table name in double quotes in your SQL query (e.g. FROM \"Sales\")."},
+                {"role": "user", "content": question}
+            ]
+        })
+        return result["messages"][-1].content
+    except Exception as e:
+        return f"Agent failed: {str(e)}"
+
+
+
+def resume_agent(user_id: UUID, decision: str) -> str:
+    config = {"configurable": {"thread_id": user_id}}
+
+    try:
+
+        result = agent.invoke(Command(resume= decision), config)
+        return result["messages"][-1].content
+    except Exception as e:
+        return f"Agent failed to res: {str(e)}"
