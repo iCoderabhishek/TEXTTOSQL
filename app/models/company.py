@@ -24,7 +24,7 @@ class Company(Base):
     company_website = Column(String)
     company_employees = Column(Integer)
     
-
+    users = relationship("User", back_populates="company")
     employees = relationship("Employee", back_populates="company")
     sales = relationship("Sales", back_populates="company")
 

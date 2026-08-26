@@ -1,0 +1,48 @@
+from langchain_aws import ChatBedrockConverse
+from langchain.tools import tool
+from app.core.config import settings
+
+llm = ChatBedrockConverse(
+    model=settings.BEDROCK_MODEL_ID,
+    region_name=settings.AWS_REGION_NAME,
+    temperature=0,
+    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+)
+
+
+@tool
+def get_weather(city: str) -> str:
+    """Get the weather of a city"""
+    return f"The weather of {city} is rainy & 21 deg Celcius"
+
+
+llm_with_tools = llm.bind_tools(
+    tools=[get_weather],
+    # tool_config={
+    #     "function_calling_config": {
+    #         "mode": "AUTO",  # Modes: ANY (force tool), AUTO (let LLM decide), NONE (disable)
+    #     }
+    # }
+)
+    
+
+if __name__ == "__main__":
+    messages = [{"role": "user", "content": "Hi, this is Abhishek, I am calling you from my app. what is the weather in Jalpaiguri?"}]
+    ai_msg = llm_with_tools.invoke(messages)
+    messages.append(ai_msg)
+
+    print(f"LLM wants to call: {ai_msg.tool_calls}")
+
+    from langchain_core.messages import ToolMessage
+
+    for tool_call in ai_msg.tool_calls:
+        tool_result = get_weather.invoke(tool_call)
+        # The LLM NEEDS to know WHICH tool call this result belongs to!
+        messages.append(ToolMessage(content=str(tool_result), tool_call_id=tool_call["id"]))
+
+    final_response = llm_with_tools.invoke(messages)
+
+    print(final_response.content)
+
+# response = llm.invoke("Hi, this is Abhishek, I am calling you from my app.")
