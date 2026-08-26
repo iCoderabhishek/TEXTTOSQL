@@ -23,3 +23,9 @@ class ChatResponse(BaseModel):
 
 class TablesResponse(TypedDict):
     tables: Annotated[list[str], Field(..., description="List of table names")]
+
+
+class ChatResumeRequest(BaseModel):
+    user_id: UUID = Field(..., description="UUID of the user")
+    decision: str = Field(..., description="The user's decision: approve or edit or reject")
+

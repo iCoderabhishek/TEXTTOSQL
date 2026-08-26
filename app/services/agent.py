@@ -11,7 +11,7 @@ from app.models.sales import Sales
 from langchain.agents.middleware import ToolErrorMiddleware, ToolRetryMiddleware, ModelFallbackMiddleware, HumanInTheLoopMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
 from app.services.error import on_error
-
+from langgraph.types import Command
 
 
 
@@ -148,3 +148,15 @@ def ask_agent(user_id: UUID, question: str) -> str:
         return result["messages"][-1].content
     except Exception as e:
         return f"Agent failed: {str(e)}"
+
+
+
+def resume_agent(user_id: UUID, decision: str) -> str:
+    config = {"configurable": {"thread_id": user_id}}
+
+    try:
+
+        result = agent.invoke(Command(resume= decision), config)
+        return result["messages"][-1].content
+    except Exception as e:
+        return f"Agent failed to res: {str(e)}"
