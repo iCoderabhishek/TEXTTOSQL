@@ -26,4 +26,4 @@ class Sales(Base):
 
     company_id = Column(UUID(as_uuid=True), ForeignKey("Company.id"))
 
-    company = relationship("Company", backref="sales")
+    company = relationship("Company", back_populates="sales")

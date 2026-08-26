@@ -4,9 +4,6 @@ from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
-from app.models.sales import Base
-
-
 class Base(DeclarativeBase):
     pass
 
