@@ -22,24 +22,24 @@ llm_with_tools = llm.bind_tools(
         }
     }
 )
+    
 
+if __name__ == "__main__":
+    messages = [{"role": "user", "content": "Hi, this is Abhishek, I am calling you from my app. what is the weather in Jalpaiguri?"}]
+    ai_msg = llm_with_tools.invoke(messages)
+    messages.append(ai_msg)
 
-messages = [{"role": "user", "content": "Hi, this is Abhishek, I am calling you from my app. what is the weather in Jalpaiguri?"}]
-ai_msg = llm_with_tools.invoke(messages)
-messages.append(ai_msg)
+    print(f"LLM wants to call: {ai_msg.tool_calls}")
 
-print(f"LLM wants to call: {ai_msg.tool_calls}")
+    from langchain_core.messages import ToolMessage
 
+    for tool_call in ai_msg.tool_calls:
+        tool_result = get_weather.invoke(tool_call)
+        # The LLM NEEDS to know WHICH tool call this result belongs to!
+        messages.append(ToolMessage(content=str(tool_result), tool_call_id=tool_call["id"]))
 
-from langchain_core.messages import ToolMessage
+    final_response = llm_with_tools.invoke(messages)
 
-for tool_call in ai_msg.tool_calls:
-    tool_result = get_weather.invoke(tool_call)
-    # The LLM NEEDS to know WHICH tool call this result belongs to!
-    messages.append(ToolMessage(content=str(tool_result), tool_call_id=tool_call["id"]))
-
-final_response = llm_with_tools.invoke(messages)
-
-print(final_response.content)
+    print(final_response.content)
 
 # response = llm.invoke("Hi, this is Abhishek, I am calling you from my app.")
