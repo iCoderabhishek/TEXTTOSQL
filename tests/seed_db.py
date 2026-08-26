@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from app.core.db import engine, SessionLocal
 from app.models.company import Base, Company, Employee
 from app.models.sales import Sales
+from app.models.user import User, UserRole, UserSubscription
 
 def seed_database():
     print("Creating database tables...")
@@ -18,33 +19,33 @@ def seed_database():
         db.close()
         return
 
-    print("Seeding Company data...,,,,,,,,,,,,,,,,,,,,,,,,")
+    print("Seeding Company data...")
     tech_corp = Company(
-        company_name="Tech Corp AI",
-        company_email="contact@techcorpai.com",
-        company_city="San Francisco",
+        company_name="Nexus Data Solutions",
+        company_email="admin@nexusdata.io",
+        company_city="Seattle",
         company_country="USA",
-        company_employees=500
+        company_employees=350
     )
     db.add(tech_corp)
     db.commit()
     db.refresh(tech_corp)
 
-    print("Seeding Employee data.........................")
+    print("Seeding Employee data...")
     emp1 = Employee(
-        first_name="Alice",
-        last_name="Smith",
-        email="alice@techcorpai.com",
-        role="Data Engineer",
-        compensation=120000,
+        first_name="Sarah",
+        last_name="Chen",
+        email="sarah.chen@nexusdata.io",
+        role="Senior Data Engineer",
+        compensation=165000,
         company_id=tech_corp.id
     )
     emp2 = Employee(
-        first_name="Bob",
-        last_name="Johnson",
-        email="bob@techcorpai.com",
-        role="Sales Executive",
-        compensation=95000,
+        first_name="Marcus",
+        last_name="Rodriguez",
+        email="marcus.r@nexusdata.io",
+        role="VP of Sales",
+        compensation=210000,
         company_id=tech_corp.id
     )
     db.add_all([emp1, emp2])
@@ -72,6 +73,27 @@ def seed_database():
         company_id=tech_corp.id
     )
     db.add_all([sale1, sale2])
+    
+    print("Seeding User data...")
+    user1 = User(
+        username="sarah_c_admin",
+        full_name="Sarah Chen",
+        email="sarah.chen@nexusdata.io",
+        password="pbkdf2_sha256$260000$mock_hash_xyz",
+        role=UserRole.ADMIN,
+        subscription=UserSubscription.PREMIUM,
+        company_id=tech_corp.id
+    )
+    user2 = User(
+        username="marcus_sales",
+        full_name="Marcus Rodriguez",
+        email="marcus.r@nexusdata.io",
+        password="pbkdf2_sha256$260000$mock_hash_abc",
+        role=UserRole.USER,
+        subscription=UserSubscription.PLUS,
+        company_id=tech_corp.id
+    )
+    db.add_all([user1, user2])
     
     db.commit()
     db.close()
