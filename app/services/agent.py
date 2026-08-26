@@ -8,6 +8,8 @@ from app.core.db import get_db, engine
 from app.models.user import User
 from uuid import UUID
 from app.models.sales import Sales
+from langchain.agents.middleware import ToolErrorMiddleware
+from app.services.error import on_error
 
 
 
@@ -91,9 +93,11 @@ def execute_sql_query(user_id: UUID, sql_query: str) -> ChatResponse:
 
 tools = [generate_sql_query, execute_sql_query]
 
+
 agent = create_agent(
     model=llm, 
-    tools=tools
+    tools=tools,
+    middleware=[ToolErrorMiddleware(on_error), ]
 )
 
 db = next(get_db())
