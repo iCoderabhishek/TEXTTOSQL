@@ -21,15 +21,7 @@ from langchain_core.messages import HumanMessage
 
 @app.get("/")
 def health_checking():
-    try:
-        # Ping the LLM to verify AI health
-        llm.invoke([HumanMessage(content="ping")])
-        ai_status = "connected"
-    except Exception as e:
-        ai_status = f"disconnected ({str(e)})"
-        
     return {
         "status": "ok", 
-        "ai_status": ai_status,
-        "message": f"Server health is Ok + AI is {ai_status}"
+        "message": "Server health is Ok"
     }
