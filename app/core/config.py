@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
     AWS_REGION_NAME: str = "us-east-1"
-    BEDROCK_MODEL_ID: str = "us.meta.llama3-3-70b-instruct-v1:0"
+    BEDROCK_MODEL_ID: str = "amazon.nova-lite-v1:0"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
