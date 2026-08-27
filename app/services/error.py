@@ -1,4 +1,4 @@
-from langgraph.prebuilt import ToolCallRequest
+from langchain.agents.middleware import ToolCallRequest
 
 def on_error(exc: Exception, request: ToolCallRequest) -> str | None:
     if isinstance(exc, ValueError):
