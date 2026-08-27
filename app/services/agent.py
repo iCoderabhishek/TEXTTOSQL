@@ -123,7 +123,10 @@ agent = create_agent(
 
 
 
-def ask_agent(user_id: UUID, question: str) -> str:
+import json
+from langchain_core.messages import AIMessageChunk
+
+async def ask_agent_stream(user_id: UUID, question: str):
     # 1. Fetch Dynamic Schema
     inspector = inspect(engine)
     schema_text = ""
@@ -134,20 +137,40 @@ def ask_agent(user_id: UUID, question: str) -> str:
 
     # 2. Invoke the Agent
     config = {"configurable": {"thread_id": str(user_id)}}
+    inputs = {
+        "messages": [
+            {"role": "system", "content": f"The user_id is {user_id}. Here is the exact database schema:\n{schema_text}\n\nIMPORTANT: You are querying PostgreSQL. If a table name has capital letters, you MUST wrap the table name in double quotes in your SQL query (e.g. FROM \"Sales\")."},
+            {"role": "user", "content": question}
+        ]
+    }
+    
     try:
-        result = agent.invoke({
-            "messages": [
-                {"role": "system", "content": f"The user_id is {user_id}. Here is the exact database schema:\n{schema_text}\n\nIMPORTANT: You are querying PostgreSQL. If a table name has capital letters, you MUST wrap the table name in double quotes in your SQL query (e.g. FROM \"Sales\")."},
-                {"role": "user", "content": question}
-            ]
-        }, config)
-        return result["messages"][-1].content
+        async for chunk in agent.astream(inputs, config, stream_mode="messages"):
+            msg, metadata = chunk
+            
+            if isinstance(msg, AIMessageChunk):
+                if msg.content:
+                    text_content = ""
+                    if isinstance(msg.content, list):
+                        for block in msg.content:
+                            if isinstance(block, dict) and block.get("type") == "text":
+                                text_content += block.get("text", "")
+                    elif isinstance(msg.content, str):
+                        text_content = msg.content
+                        
+                    if text_content:
+                        yield f"data: {json.dumps({'type': 'content', 'content': text_content})}\n\n"
+
+                if msg.tool_calls:
+                    for tc in msg.tool_calls:
+                        if tc.get("name") == "execute_sql_query":
+                            sql_query = tc.get("args", {}).get("sql_query", "")
+                            yield f"data: {json.dumps({'type': 'tool_call', 'sql_query': sql_query})}\n\n"
     except Exception as e:
-        return f"Agent failed: {str(e)}"
+        yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
 
 
-
-def resume_agent(user_id: UUID, decision: str) -> str:
+async def resume_agent_stream(user_id: UUID, decision: str):
     config = {"configurable": {"thread_id": str(user_id)}}
     
     # HumanInTheLoopMiddleware expects a dictionary with "decisions" list
@@ -160,7 +183,26 @@ def resume_agent(user_id: UUID, decision: str) -> str:
     }
 
     try:
-        result = agent.invoke(Command(resume=hitl_decision), config)
-        return result["messages"][-1].content
+        async for chunk in agent.astream(Command(resume=hitl_decision), config, stream_mode="messages"):
+            msg, metadata = chunk
+            
+            if isinstance(msg, AIMessageChunk):
+                if msg.content:
+                    text_content = ""
+                    if isinstance(msg.content, list):
+                        for block in msg.content:
+                            if isinstance(block, dict) and block.get("type") == "text":
+                                text_content += block.get("text", "")
+                    elif isinstance(msg.content, str):
+                        text_content = msg.content
+                        
+                    if text_content:
+                        yield f"data: {json.dumps({'type': 'content', 'content': text_content})}\n\n"
+
+                if msg.tool_calls:
+                    for tc in msg.tool_calls:
+                        if tc.get("name") == "execute_sql_query":
+                            sql_query = tc.get("args", {}).get("sql_query", "")
+                            yield f"data: {json.dumps({'type': 'tool_call', 'sql_query': sql_query})}\n\n"
     except Exception as e:
-        return f"Agent failed to res: {str(e)}"
+        yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
