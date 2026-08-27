@@ -20,8 +20,8 @@ RUN uv sync --frozen --no-dev --no-install-project
 # Copy the rest of the application
 COPY . .
 
-# Expose the port Uvicorn will listen on
-EXPOSE 3000
+# Expose a default port (cloud providers often use 8080 or dynamically assign PORT)
+EXPOSE 8080
 
-# Run the FastAPI server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3000"]
+# Run the FastAPI server (binds to $PORT if set by the cloud platform, else 8080)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
