@@ -54,6 +54,34 @@ sql-texter-ai/
 - **uv vs pip/poetry**: `uv` provides significantly faster dependency resolution and Docker build times. The tradeoff is that it is relatively new compared to legacy tools, though it has reached stability.
 - **Direct DB Connection vs Read-Replica**: Currently, queries are executed directly on the primary database session. For production scaling, routing generated SELECT queries to a read-replica would be necessary to prevent analytical queries from impacting transactional workload performance.
 
+## API & Live Endpoints
+
+The API is fully deployed and can be tested live.
+
+- **Base URL**: `https://texttosql-7kjvj3.lonch.cloud`
+- **Interactive Swagger Docs**: [`https://texttosql-7kjvj3.lonch.cloud/docs`](https://texttosql-7kjvj3.lonch.cloud/docs)
+
+### Key Endpoints to Test
+You can use the Swagger UI (`/docs`) to test these endpoints directly in your browser:
+
+1. **`GET /`**
+   - **Purpose**: Server health check.
+   - **Returns**: `{"status": "ok", "message": "Server health is Ok"}`
+
+2. **`POST /api/v1/users/guest`**
+   - **Purpose**: Creates a temporary guest user and a default workspace/company. 
+   - **Why you need it**: You need a `user_id` to start a chat session.
+
+3. **`POST /api/v1/chat`**
+   - **Purpose**: Sends a natural language query to the AI agent.
+   - **Body**: `{ "user_id": "<UUID from step 2>", "message": "show me total sales" }`
+   - **Returns**: Server-Sent Events (SSE) stream. The agent will pause and request execution approval when a SQL query is generated.
+
+4. **`POST /api/v1/chat/resume`**
+   - **Purpose**: Approves or rejects the generated SQL query (Human-in-the-loop).
+   - **Body**: `{ "user_id": "<UUID>", "decision": "approve" }` (Decisions can be `approve`, `edit`, or `reject`).
+   - **Returns**: The execution results streamed via SSE.
+
 ## Installations
 
 ### Local Development
