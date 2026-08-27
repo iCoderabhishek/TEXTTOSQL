@@ -23,5 +23,8 @@ COPY . .
 # Expose a default port (cloud providers often use 8080 or dynamically assign PORT)
 EXPOSE 8080
 
+# Make sure the virtual environment's binaries are in the PATH
+ENV PATH="/app/.venv/bin:$PATH"
+
 # Run the FastAPI server (binds to $PORT if set by the cloud platform, else 8080)
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
