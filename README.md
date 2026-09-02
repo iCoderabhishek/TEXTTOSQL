@@ -58,8 +58,8 @@ sql-texter-ai/
 
 The API is fully deployed and can be tested live.
 
-- **Base URL**: `https://texttosql-7kjvj3.lonch.cloud`
-- **Interactive Swagger Docs**: [`https://texttosql-7kjvj3.lonch.cloud/docs`](https://texttosql-7kjvj3.lonch.cloud/docs)
+- **Base URL**: `https://texttosql-fgzm8h.lonch.cloud/docs`
+- **Interactive Swagger Docs**: `https://texttosql-fgzm8h.lonch.cloud/docs`
 
 ### Key Endpoints to Test
 You can use the Swagger UI (`/docs`) to test these endpoints directly in your browser:
