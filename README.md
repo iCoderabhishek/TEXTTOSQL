@@ -104,7 +104,7 @@ For a complete local setup including the PostgreSQL database, use Docker Compose
    ```bash
    docker-compose up -d
    ```
-3. The API will be available at `http://localhost:8080`.
+3. The API will be available at `http://localhost:3000`.
 4. To stop and remove the containers:
    ```bash
    docker-compose down

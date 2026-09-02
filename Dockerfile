@@ -20,11 +20,11 @@ RUN uv sync --frozen --no-dev --no-install-project
 # Copy the rest of the application
 COPY . .
 
-# Expose a default port (cloud providers often use 8080 or dynamically assign PORT)
-EXPOSE 8080
+# Expose a default port (cloud providers often use 3000 or dynamically assign PORT)
+EXPOSE 3000
 
 # Make sure the virtual environment's binaries are in the PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Run the FastAPI server (binds to $PORT if set by the cloud platform, else 8080)
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Run the FastAPI server (binds to $PORT if set by the cloud platform, else 3000)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-3000}"]
